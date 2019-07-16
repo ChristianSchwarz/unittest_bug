@@ -1,0 +1,33 @@
+apply plugin: 'jacoco'
+
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+}
+
+jacoco {
+    toolVersion = jacoco_version
+}
+
+android.libraryVariants.all { variant ->
+    def realVariantName = variant.name
+    def variantName = variant.name.capitalize()
+
+    task("jacoco${variantName}TestReport", type: JacocoReport, dependsOn: "test${variantName}UnitTest") {
+
+        reports {
+            xml.enabled = true
+            html.enabled = true
+        }
+
+        def fileFilter = [
+                '**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*', '**/*$[0-9].*', '**/heating/*', '**/electric/batterycharging/*', '**/electric/timer/*'
+        ]
+        def debugTree = fileTree(dir: "$project.buildDir/tmp/kotlin-classes/${realVariantName}", excludes: fileFilter)
+        def mainSrc = "$project.projectDir/src/main/java"
+
+        sourceDirectories = files([mainSrc])
+        classDirectories = files([debugTree])
+        executionData = files("${buildDir}/jacoco/test${variantName}UnitTest.exec")
+    }
+}

@@ -1,0 +1,151 @@
+
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: "de.mannodermaus.android-junit5"
+
+
+android {
+    compileSdkVersion 28
+    publishNonDefault true
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode rootProject.versionCode
+        versionName rootProject.versionName
+
+    }
+
+    buildTypes {
+        release {
+            testCoverageEnabled true
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            testCoverageEnabled true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+
+
+
+}
+
+def OKHTTPVersion = '3.14.0'
+
+dependencies {
+
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.1.1"
+    // better performance for dokka
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
+    implementation "com.squareup.okhttp3:okhttp:$OKHTTPVersion"
+    implementation "com.squareup.okhttp3:okhttp-urlconnection:$OKHTTPVersion"
+    implementation "com.squareup.okhttp3:logging-interceptor:$OKHTTPVersion"
+
+    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-jackson:2.5.0'
+    implementation('com.squareup.retrofit2:converter-simplexml:2.5.0') {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'stax', module: 'stax'
+        exclude group: 'xpp3', module: 'xpp3'
+    }
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.0"
+
+    implementation 'commons-codec:commons-codec:1.11'
+
+    implementation 'com.madgag.spongycastle:core:1.58.0.0'
+    implementation 'com.madgag.spongycastle:prov:1.54.0.0'
+    implementation 'com.madgag.spongycastle:pkix:1.54.0.0'
+
+    implementation 'net.danlew:android.joda:2.9.9.4'
+
+    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.1.11")
+
+    testImplementation 'io.netty:netty-all:4.1.22.Final'
+    testImplementation "org.assertj:assertj-core:3.12.1"
+    testImplementation "org.assertj:assertj-joda-time:2.2.0"
+    testImplementation "io.mockk:mockk:1.9.1"
+
+
+    testImplementation "com.google.guava:guava:24.1-jre"
+    testImplementation 'joda-time:joda-time:2.10'
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.3.1"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:5.3.1"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.3.1"
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.2.1"
+    testImplementation "io.kotlintest:kotlintest-assertions:3.3.2"
+
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+
+
+task buildArchive(type: Zip, dependsOn: "assembleObfuscatedDebug") {
+    dependsOn( 'lintDebug', 'testDebugUnitTest', 'jacocoDebugTestReport')
+
+
+    from("$buildDir/javadoc") {
+        include "**/*"
+        into("documentation/api-documentation/javadoc")
+    }
+
+    from("$buildDir/outputs/aar/") {
+        include "*obfuscatedDebug.aar"
+
+        into("/")
+    }
+
+    from("$buildDir/reports/tests/testDebugUnitTest") {
+        include "**/*"
+        into("testreport")
+    }
+
+    from("$buildDir/reports") {
+        include "lint-results-debug.html"
+        into("testreport")
+    }
+
+    from("$buildDir/reports/jacoco/jacocoDebugTestReport/html") {
+        include "**/*"
+        into("testcoverage")
+    }
+
+
+    destinationDir buildDir
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+    include("**/lib/api/**/*")
+    includeEmptyDirs false
+}
+
